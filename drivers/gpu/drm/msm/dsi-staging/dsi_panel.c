@@ -24,7 +24,10 @@
 #include "dsi_ctrl_hw.h"
 #include "dsi_parser.h"
 
+#include <linux/printk_disable_msg.h>
+
 char g_lcd_id[128];
+
 /**
  * topology is currently defined by a set of following 3 values:
  * 1. num of layer mixers
