@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 SECONDS=0
-ZIPNAME="Zenith-Q-Ginkgo-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
+ZIPNAME="Destruction-Q-Ginkgo-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
 TC_DIR="$(pwd)/../tc/"
 CLANG_DIR="${TC_DIR}clang"
 GCC_64_DIR="${TC_DIR}aarch64-linux-android-4.9"
@@ -13,7 +13,7 @@ DEFCONFIG="vendor/ginkgo_defconfig"
 export TZ=Asia/Jakarta
 
 # ===== TELEGRAM CONFIG =====
-BOT_TOKEN="8338188311:AAFgWEjptCCroGaaYd9oSLgGMNeu_D0pip0"
+BOT_TOKEN="8775182477:AAHsgMfdoYphrZ6Llq6EF2F0Ro7Y_ph4nf4"
 CHAT_ID="-1002001516627"
 API_URL="https://api.telegram.org/bot${BOT_TOKEN}"
 
