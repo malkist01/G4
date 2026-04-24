@@ -9,6 +9,17 @@ GCC_32_DIR="${TC_DIR}arm-linux-androideabi-4.9"
 AK3_DIR="$(pwd)/AnyKernel3"
 DEFCONFIG="vendor/ginkgo_defconfig"
 
+# ===== Install Depend =====
+sudo apt update
+sudo apt install -y
+bc bison ca-certificates curl flex gcc git libc6-dev libssl-dev
+openssl python-is-python3 ssh wget zip sudo make clang
+gcc-arm-linux-gnueabi software-properties-common build-essential
+libarchive-tools gcc-aarch64-linux-gnu libssl-dev libffi-dev
+libncurses5-dev zlib1g zlib1g-dev libreadline-dev libbz2-dev
+libsqlite3-dev make gcc pigz python3 cpio lld
+
+
 # ===== Set timezone =====
 export TZ=Asia/Jakarta
 
