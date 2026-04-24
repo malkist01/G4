@@ -20,7 +20,7 @@ jobs:
         kernel_config:
           - kernel_name: "SM6125 - Ginkgo"
             device: Ginkgo
-            kernel_url: "https://github.com/malkist01/G4"
+            kernel_url: "https://github.com/malkist01/Ginkgo"
             kernel_branch: "main"
             anykernel_branch: "ginkgo"
             tag: "Stable"
