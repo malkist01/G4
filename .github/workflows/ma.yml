@@ -1,0 +1,162 @@
+# Anjani Project
+name: Kernel Compiler
+on:
+  workflow_dispatch:
+    inputs:
+      ubuntu:
+        description: 'Run on'
+        default: 'ubuntu-latest'
+        required: true
+        type: string
+      name:
+        description: 'Name'
+        default: 'Anajani-kernel'
+        required: true
+        type: string
+      compiler:
+        description: 'Compiler | gcc|clang|llvm'
+        default: 'clang'
+        required: true
+        type: string
+      aosp-clang:
+        description: 'Clang | false for disable'
+        default: 'https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/4d2864f08ff2c290563fb903a5156e0504620bbe/clang-r563880c.tar.gz'
+        required: true
+        type: string
+      kernel-url:
+        description: 'Kernel-url'
+        default: 'https://github.com/malkist01/Ginkgo.git'
+        required: true
+        type: string
+      kernel-branch:
+        description: 'Kernel-branch'
+        default: 'susfs'
+        required: true
+        type: string
+      kernel-config:
+        description: 'Kernel-config'
+        default: 'vendor/ginkgo_defconfig'
+        required: true
+        type: string
+      AK3:
+        description: 'AnyKernel3'
+        default: 'https://github.com/malkist01/AnyKernel3'
+        required: true
+        type: string
+env:
+  TZ: Asia/Jakarta
+jobs:
+  anjani:
+    runs-on: ${{ inputs.ubuntu }}
+    steps:
+    - name: Checkin
+      run: |
+         echo "name: ${{ inputs.name }}"
+         echo "compiler: ${{ inputs.compiler }}"
+         echo "aosp-clang: ${{ inputs.aosp-clang }}"
+         if [ ${{ inputs.kernel-url }} != false ]; then
+            echo "kernel-url: ${{ inputs.kernel-url }}"
+            echo "kernel-branch: ${{ inputs.kernel-branch }}"
+         fi
+         if [ ${{ inputs.kernel-url }} == false ]; then
+            echo "kernel-url: use current repo"
+            sudo timedatectl set-timezone Asia/Jakarta
+            if [ ${{ inputs.kernel-branch }} != main ]; then
+               echo "custom-sc: ${{ inputs.kernel-branch }}"
+            fi
+            if [ ${{ inputs.kernel-branch }} == main ]; then
+               echo "custom-sc: disable"
+            fi
+         fi
+         echo "kernel-config: ${{ inputs.kernel-config }}"
+         echo "anjani Project"
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup Packages
+      run: |
+         sudo apt-get install --no-install-recommends -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu lld llvm g++-aarch64-linux-gnu bc
+         if [ ${{ inputs.aosp-clang }} == false ]; then
+            sudo apt install -y clang
+         fi
+         aria2c -q https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh && NONINTERACTIVE=1 bash ./uninstall.sh -f -q
+         if [ -f /bin/swapon ]; then
+             export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
+             sudo swapoff $SWAP_FILE
+             sudo rm $SWAP_FILE
+             sudo fallocate -l 16G $SWAP_FILE
+             sudo chmod 600 $SWAP_FILE
+             sudo mkswap $SWAP_FILE
+             sudo swapon $SWAP_FILE
+             unset SWAP_FILE
+         fi
+    - name: Setup Gcc & Clang
+      run: |
+            mkdir -p -v $HOME/gcc-64
+            git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git $HOME/gcc-64
+            mkdir -p -v $HOME/gcc-32
+            git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git $HOME/gcc-32
+            aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/4d2864f08ff2c290563fb903a5156e0504620bbe/clang-r563880c.tar.gz
+            mkdir $HOME/clang -p -v
+            tar -C $HOME/clang -zxf aosp-clang.tar.gz        
+    - name: Setup Kernel
+      run: |
+         if [ ${{ inputs.kernel-url }} != false ]; then
+            git clone --depth=1 ${{ inputs.kernel-url }} -b ${{ inputs.kernel-branch }} kernel-dir
+         else
+            if [ ${{ inputs.kernel-branch }} != main ]; then
+               ${{ inputs.kernel-branch }}
+            else
+               echo "custom-sc: disable"
+            fi
+            ls
+         fi
+
+    - name: Compile
+      run: |
+         mkdir -p -v out
+         if [ ${{ inputs.kernel-url }} != false ]; then
+            cd kernel-dir
+            COMMAND="make -j$(nproc --all) ${{ inputs.kernel-config }} ARCH=arm64 O=../out all"
+         fi
+         if [ ${{ inputs.kernel-url }} == false ]; then
+            COMMAND="make -j$(nproc --all) ${{ inputs.kernel-config }} ARCH=arm64 O=out all"
+         fi
+         if [ ${{ inputs.aosp-clang }} == false ]; then
+            echo "aosp-clang disable"
+         else
+            export PATH=$HOME/clang/bin:$PATH
+            export PATH=$HOME/clang/bin:$HOME/gcc-64/bin:$HOME/gcc-32/bin:$PATH
+            export KBUILD_BUILD_VERSION="1"
+         fi
+         DATE=$(TZ=Asia/Jakarta date +"%Y%m%d-%T")
+         export KBUILD_BUILD_USER="malkis"
+         export KBUILD_BUILD_HOST="android"
+         COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu CROSS_COMPILE_COMPAT=arm-linux-gnueabi CLANG_TRIPLE=aarch64-linux-gnu CC=clang LD=ld.lld AR=llvm-ar AS=llvm-as NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip LLVM=1 LLVM_IAS=1"
+         ${COMMAND}
+    - name: AnyKernel3
+      run: |
+          git clone -b ginkgo ${{ inputs.AK3 }} AnyKernel3
+          rm -rf AnyKernel3/.git AnyKernel3/.github AnyKernel3/LICENSE AnyKernel3/README.md AnyKernel3/modules AnyKernel3/patch AnyKernel3/ramdisk
+          if [[ -f out/arch/arm64/boot/Image.gz-dtb ]]; then
+            cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/Image.gz-dtb
+          elif [[ -f out/arch/arm64/boot/Image-dtb ]]; then
+            cp out/arch/arm64/boot/Image-dtb AnyKernel3/Image-dtb
+          elif [[ -f out/arch/arm64/boot/Image.gz ]]; then
+            cp out/arch/arm64/boot/Image.gz AnyKernel3/Image.gz
+          elif [[ -f out/arch/arm64/boot/Image ]]; then
+            cp out/arch/arm64/boot/Image AnyKernel3/Image
+          fi
+          if [ -f out/arch/arm64/boot/dtbo.img ]; then
+            cp out/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
+          fi
+    - name: Upload
+      run: |
+          mkdir Upload
+          cp -rf AnyKernel3/* Upload
+    - id: Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: "${{ inputs.name }}-$DATE"
+        path: Upload/*
+        
+# Enjoy Your Life....
