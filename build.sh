@@ -88,6 +88,8 @@ make O=out ARCH=arm64 $DEFCONFIG
 tg_msg "🔨 <b>Compilation Started</b>"
 make -j$(nproc --all) O=out \
 ARCH=arm64 \
+LLVM=1 \
+LLVM_IAS=1 \
 CC=clang \
 LD=ld.lld \
 AR=llvm-ar \
