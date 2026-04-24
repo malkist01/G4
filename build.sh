@@ -1,15 +1,51 @@
-#!/usr/bin/env bash
-#
-SECONDS=0
-ZIPNAME="AnjaniLaurens-Ginkgo-$(TZ=Asia/Jakarta date +"%Y%m%d-%H%M").zip"
-TC_DIR="$(pwd)/../tc/"
-CLANG_DIR="${TC_DIR}clang"
-GCC_64_DIR="${TC_DIR}aarch64-linux-android-4.9"
-GCC_32_DIR="${TC_DIR}arm-linux-androideabi-4.9"
-AK3_DIR="$(pwd)/AnyKernel3"
-DEFCONFIG="vendor/ginkgo_defconfig"
+#!/bin/sh
 
-# ===== Install Depend =====
+# Kernel Build Script by Mahiroo aka Yudaa
+
+trap 'echo -e "\n\033[91m[!] Build dibatalkan oleh user.\033[0m"; tg_channelcast "⚠️ <b>Build kernel dibatalkan oleh user!</b>"; cleanup_files; exit 1' INT
+exec > >(tee -a build.log) 2>&1
+
+# ============================
+# Setup
+# ============================
+PHONE="ginkgo"
+DEFCONFIG="vendor/ginkgo_defconfig"
+CLANG="$(clang --version 2>&1 | head -n 1)"
+ZIPNAME="AnjaniLauren-KSUN-$(date '+%Y%m%d-%H%M').zip"
+BOT_TOKEN="8736261216:AAFhWrQl8vyavRExCYz857yx6s8WZvxbLqs"
+CHAT_ID="-1002287610863"
+COMPILERDIR="$(pwd)/../aosp-clang"
+export KBUILD_BUILD_USER="malkist"
+export KBUILD_BUILD_HOST="phone"
+
+# ============================
+# KernelSU
+# ============================
+
+# ============================
+# Variabel Telegram dan Device Info
+# ============================
+DEVICE="Redmi Note 8"
+DISTRO="$(lsb_release -d | awk -F'\t' '{print $2}')"
+PARSE_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+COMMIT_POINT="$(git rev-parse HEAD)"
+CPU_NAME="$(lscpu | grep 'Model name' | awk -F': ' '{print $2}')"
+PROCS="$(nproc --all)"
+TOTAL_RAM_GB="$(free -g | awk '/^Mem:/{print $2}')"
+DATE="$(date '+%Y-%m-%d %H:%M:%S')"
+MESSAGE_ERROR="Error Build untuk $PHONE Dibatalkan!"
+kernel="out/arch/arm64/boot/Image.gz"
+dtb="out/arch/arm64/boot/dtb.img"
+dtbo="out/arch/arm64/boot/dtbo.img"
+
+# ============================
+# Warna output
+# ============================
+cyan="\033[96m"
+green="\033[92m"
+red="\033[91m"
+reset="\033[0m"
+
 function install_dependencies() {
     echo -e "${cyan}==> Instalasi dependensi...${reset}"
     sudo apt update
@@ -17,121 +53,181 @@ function install_dependencies() {
     sudo apt install -y zstd
 }
 
-
-# ===== Set timezone =====
-export TZ=Asia/Jakarta
-
-# ===== TELEGRAM CONFIG =====
-BOT_TOKEN="8736261216:AAFhWrQl8vyavRExCYz857yx6s8WZvxbLqs"
-CHAT_ID="-1002287610863"
-API_URL="https://api.telegram.org/bot${BOT_TOKEN}"
-
-tg_msg() {
-curl -s -X POST "${API_URL}/sendMessage" \
--d chat_id="${CHAT_ID}" \
--d text="$1" \
--d parse_mode=HTML > /dev/null
-}
-
-tg_file() {
-curl -s -X POST "${API_URL}/sendDocument" \
--F chat_id="${CHAT_ID}" \
--F document=@"$1" \
--F caption="$2" > /dev/null
-}
-
-# ===== ENV =====
-export PATH="$CLANG_DIR/bin:$PATH"
-export LD_LIBRARY_PATH="$CLANG_DIR/lib:$LD_LIBRARY_PATH"
-export KBUILD_BUILD_VERSION="1"
-export LOCALVERSION
-
-# ===== START NOTIF =====
-tg_msg "🚀 <b>Kernel Build Started</b>
-Device: <b>Redmi Note 8 (Ginkgo)</b>
-Time: <code>$(date)</code>"
-
-# ===== CLANG =====
-if ! [ -d "${CLANG_DIR}" ]; then
-tg_msg "⚙️ Cloning Clang..."
-git clone --depth=1 https://gitlab.com/nekoprjkt/aosp-clang ${CLANG_DIR} || {
-tg_msg "❌ <b>Failed cloning Clang</b>"
-}
-fi
-
-# ===== GCC 64 =====
-if ! [ -d "${GCC_64_DIR}" ]; then
-tg_msg "⚙️ Cloning GCC 64..."
-git clone --depth=1 -b lineage-19.1 \
-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git \
-${GCC_64_DIR} || {
-tg_msg "❌ <b>Failed cloning GCC 64</b>"
-}
-fi
-
-# ===== GCC 32 =====
-if ! [ -d "${GCC_32_DIR}" ]; then
-tg_msg "⚙️ Cloning GCC 32..."
-git clone --depth=1 -b lineage-19.1 \
-https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git \
-${GCC_32_DIR} || {
-tg_msg "❌ <b>Failed cloning GCC 32</b>"
-}
-fi
-
-mkdir -p out
-make O=out ARCH=arm64 $DEFCONFIG
-
-# ===== BUILD =====
-tg_msg "🔨 <b>Compilation Started</b>"
-make -j$(nproc --all) O=out \
-ARCH=arm64 \
-LLVM=1 \
-LLVM_IAS=1 \
-CC=clang \
-LD=ld.lld \
-AR=llvm-ar \
-AS=llvm-as \
-NM=llvm-nm \
-OBJCOPY=llvm-objcopy \
-OBJDUMP=llvm-objdump \
-STRIP=llvm-strip \
-CROSS_COMPILE=aarch64-linux-android- \
-CROSS_COMPILE_ARM32=arm-linux-gnueabi- \
-Image.gz-dtb \
-dtbo.img 2>&1 | tee log.txt
-
-# ===== CHECK RESULT =====
-if [ -f "out/arch/arm64/boot/Image.gz-dtb" ] && [ -f "out/arch/arm64/boot/dtbo.img" ]; then
-tg_msg "✅ <b>Build Success</b>
-Zipping kernel..."
-
-if [ -d "$AK3_DIR" ]; then
-cp -r $AK3_DIR AnyKernel3
+function clang() {
+if [ -d $COMPILERDIR ] ; then
+echo -e " "
+echo -e "\n$green[!] Lets's Build UwU...\033[0m \n"
 else
-git clone -q -b ginkgo https://github.com/malkist01/AnyKernel3 || {
-tg_msg "❌ Failed cloning AnyKernel3"
+echo -e " "
+echo -e "\n$red[!] clang Dir Not Found!!!\033[0m \n"
+sleep 2
+echo -e "$green[+] Wait.. Cloning clang...\033[0m \n"
+sleep 2
+wget -q https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/4d2864f08ff2c290563fb903a5156e0504620bbe/clang-r563880c.tar.gz -O clang.tar.gz
+    rm -rf $COMPILERDIR 
+    mkdir $COMPILERDIR 
+    tar -xvf clang.tar.gz -C $COMPILERDIR
+    rm -rf clang.tar.gz
+sleep 1
+echo
+echo -e "\n$green[!] Lets's Build UwU...\033[0m \n"
+sleep 1
+fi
 }
-fi
 
-cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3
-cp out/arch/arm64/boot/dtbo.img AnyKernel3
+function verify_toolchain_versions() {
+    echo -e "${green}🔧 Clang  : $(${CLANG_DIR}/bin/clang --version | head -n 1)${reset}"
+}
 
-rm -rf *zip
-cd AnyKernel3
-git checkout main &> /dev/null
-zip -r9 "../$ZIPNAME" * -x '*.git*' README.md *placeholder
-cd ..
+function tg_channelcast() {
+    local msg=""
+    for POST in "$@"; do
+        msg+="${POST}"$'\n'
+    done
+    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+        -d chat_id="${CHAT_ID}" \
+        -d disable_web_page_preview=true \
+        -d parse_mode=HTML \
+        -d text="${msg}"
+}
 
-# ===== SEND ZIP =====
-tg_file "$ZIPNAME" "📦 Kernel Build Finished
-⏱ Time: $((SECONDS / 60))m $((SECONDS % 60))s"
+function send_initial_message() {
+    tg_channelcast \
+        "🚀 <b>Kernel Build Dimulai!</b>" \
+        "📱 <b>Device :</b> <code>$DEVICE</code>" \
+        "🛠️ <b>Compiler :</b> <code>$CLANG</code>" \
+        "🌿 <b>Branch :</b> <code>$PARSE_BRANCH</code>" \
+        "📝 <b>Commit :</b> $COMMIT_POINT" \
+        "🧠 <b>CPU :</b> <code>$CPU_NAME ($PROCS cores)</code>" \
+        "💾 <b>RAM :</b> <code>$TOTAL_RAM_GB GB</code>" \
+        "📅 <b>Date :</b> <code>$DATE</code>" \
+        "⌛️ Build berjalan..."
+}
 
-rm -rf AnyKernel3
-rm -rf out/arch/arm64/boot
+function send_success_message() {
+    tg_channelcast \
+        "✅ <b>Build Sukses!</b>" \
+        "📱 <b>Device :</b> <code>$DEVICE</code>" \
+        "📦 <b>ZIP:</b> <code>$ZIPNAME</code>" \
+        "❇️ <b>Kernel version:</b> <code>$(make kernelversion 2>/dev/null)</code>" \
+        "⚙️ <b>Toolchain info:</b> <code>$(clang --version | head -n 1)</code>" \
+        "🔗 <b>KSUN version:</b> <code>3.1.0</code>" \
+        "🍙 <b>SUSFS version:</b> <code>v2.0.0</code>" \
+        "🕒 <b>Durasi:</b> <code>$((DIFF / 60)) menit $((DIFF % 60)) detik</code>"
+}
+
+function send_log() {
+    curl -s -F "chat_id=${CHAT_ID}" -F "document=@log.txt" -F "caption=${MESSAGE_ERROR}" "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" > /dev/null
+}
+
+function clean() {
+    echo -e "${red}[!] Clean...${reset}"
+    rm -rf log.txt full-build.log out/full_defconfig "$ZIPNAME"
+}
+
+function clean_out_dir() {
+    echo -e "${red}[!] Bersihkan out/...${reset}"
+    [ -d out ] && rm -rf out/* || mkdir out
+}
+
+function cleanup_files() {
+    echo -e "${red}[!] Cleanup akhir...${reset}"
+    [ -f "$ZIPNAME" ] && rm -f "$ZIPNAME"
+    [ -f log.txt ] && rm -f log.txt
+    [ -f full-build.log ] && rm -f full-build.log
+    [ -f out/full_defconfig ] && rm -f out/full_defconfig
+}
+
+function build_kernel() {
+    export PATH="$COMPILERDIR/bin:$PATH"
+    make -j$(nproc --all) O=out ARCH=arm64 ${DEFCONFIG}
+    if [ $? -ne 0 ]
+then
+    echo -e "\n"
+    echo -e "$red [!] BUILD FAILED \033[0m"
+    echo -e "\n"
 else
-tg_msg "❌ <b>Build Failed</b>
-Check <code>log.txt</code>"
+    echo -e "\n"
+    echo -e "$green==================================\033[0m"
+    echo -e "$green= [!] START BUILD ${DEFCONFIG}\033[0m"
+    echo -e "$green==================================\033[0m"
+    echo -e "\n"
 fi
 
-tg_msg "🎉 <b>Done!</b>"
+# Speed up build process
+MAKE="./makeparallel"
+
+# Build Start Here
+
+   make -j$(nproc --all) \
+    O=out \
+    ARCH=arm64 \
+    LLVM=1 \
+    LLVM_IAS=1 \
+    AR=llvm-ar \
+    NM=llvm-nm \
+    LD=ld.lld \
+    OBJCOPY=llvm-objcopy \
+    OBJDUMP=llvm-objdump \
+    STRIP=llvm-strip \
+    CC=clang \
+    DTC_EXT=dtc \
+    CROSS_COMPILE=aarch64-linux-gnu- \
+    CROSS_COMPILE_ARM32=arm-linux-gnueabi- 2>&1 | tee full-build.log
+
+    grep -Ei "(error|warning)" full-build.log > log.txt
+
+    if grep -q "error:" full-build.log || [ ! -f out/arch/arm64/boot/Image ]; then
+        echo -e "${red}[!] Build gagal${reset}"
+        send_log
+        cleanup_files
+        return 1
+    fi
+
+    echo -e "${green}[+] Build sukses! Packing ZIP...${reset}"
+
+    [ ! -d AnyKernel3 ] && git clone -q https://github.com/malkist01/AnyKernel2.git -b master AnyKernel3
+    cp -f "$kernel" "$dtb" AnyKernel3/
+    [ -f "$dtbo" ] && cp -f "$dtbo" AnyKernel3/
+    cd AnyKernel3 || return 1
+    zip -r9 "../$ZIPNAME" * -x .git README.md *placeholder
+    cd .. && rm -rf AnyKernel3
+
+    make O=out ARCH=arm64 savedefconfig
+    mv out/defconfig out/full_defconfig
+
+    BUILD_END=$(date +"%s")
+    DIFF=$((BUILD_END - BUILD_START))
+
+    echo -e "${green}🕒 Durasi Build : $((DIFF / 60)) menit $((DIFF % 60)) detik${reset}"
+    upload_zip
+    upload_fullbuild_log
+    upload_defconfig
+    send_success_message
+    cleanup_files
+}
+
+function upload_zip() {
+    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" -F document=@"$ZIPNAME" -F chat_id="$CHAT_ID" > /dev/null
+}
+
+function upload_fullbuild_log() {
+    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" -F document=@"full-build.log" -F caption="Full Build Log - $ZIPNAME" -F chat_id="$CHAT_ID" > /dev/null
+}
+
+function upload_defconfig() {
+    [ -f out/full_defconfig ] || return
+    cp out/full_defconfig vendor/ginkgo_defconfig
+    curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendDocument" -F document=@"ginkgo_defconfig" -F caption="Full Defconfig - $ZIPNAME" -F chat_id="$CHAT_ID" > /dev/null
+    rm -f ginkgo_defconfig
+}
+
+# ============================
+# Eksekusi utama
+# ============================
+BUILD_START=$(date +"%s")
+install_dependencies
+clean
+clang
+send_initial_message
+build_kernel
