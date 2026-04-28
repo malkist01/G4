@@ -56,7 +56,7 @@ on:
 env:        
  TZ: Asia/Jakarta
 jobs:
-  linext-24:
+  anjani:
     runs-on: ${{ inputs.ubuntu }}
     steps:
     - name: Checkin
