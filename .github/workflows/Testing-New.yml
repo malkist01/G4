@@ -108,45 +108,6 @@ jobs:
        xz-utils \
        zlib1g-dev \
        libncurses5-dev \
-    - name: Setup GCC
-      run: |
-         if [ ${{ inputs.aosp-clang }} == false ]; then
-            echo "aosp-clang disable"
-         else
-            mkdir -p -v $HOME/gcc-64
-            git clone -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git $HOME/gcc-64
-            mkdir -p -v $HOME/gcc-32
-            git clone -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git $HOME/gcc-32
-         fi
-    - name: Setup Clang
-      run: |
-         if [ ${{ inputs.aosp-clang }} == false ]; then
-            echo "aosp-clang disable"
-         else
-            if [ ${{ inputs.aosp-clang }} == "10" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r399163b/clang-r399163.tar.gz
-            elif [ ${{ inputs.aosp-clang }} == "11" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r416183/clang-r399163b.tar.gz
-            elif [ ${{ inputs.aosp-clang }} == "12" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r416183/clang-r416183.tar.gz
-            elif [ ${{ inputs.aosp-clang }} == "13" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android13-release/clang-r450784d.tar.gz
-            elif [ ${{ inputs.aosp-clang }} == "17" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android14-release/clang-r487747c.tar.gz
-            elif [ ${{ inputs.aosp-clang }} == "18" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r522817.tar.gz
-            elif [ ${{ inputs.aosp-clang }} == "19" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r530567.tar.gz
-            elif [ ${{ inputs.aosp-clang }} == "20" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz          
-            elif [ ${{ inputs.aosp-clang }} == "21" ]; then
-                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/0998f421320ae02fddabec8a78b91bf7620159f6/clang-r563880.tar.gz         
-            elif [ ${{ inputs.aosp-clang }} != false ]; then
-                aria2c -o aosp-clang.tar.gz ${{ inputs.aosp-clang }}
-            fi
-            mkdir $HOME/clang -p -v
-            tar -C $HOME/clang -zxf aosp-clang.tar.gz
-         fi
     - name: Setup Kernel
       run: |
          if [ ${{ inputs.kernel-url }} != false ]; then
@@ -186,20 +147,12 @@ jobs:
          if [ ${{ inputs.aosp-clang }} == false ]; then
             echo "aosp-clang disable"
          else
-            export PATH=$HOME/clang/bin:$HOME/gcc-64/bin:$HOME/gcc-32/bin:$PATH
+            export PATH=$HOME/bin:$PATH
          fi
          export KBUILD_BUILD_USER="malkist"
          export KBUILD_BUILD_HOST="android"
          if [ ${{ inputs.compiler }} == gcc ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-"
-         elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} == false ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- CC=clang"
-         elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} != false ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang"
-         elif [ ${{ inputs.compiler }} == llvm ] && [ ${{ inputs.aosp-clang }} == false ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- CC=clang LLVM=1 LLVM_IAS=0 AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTAR=llvm-ar"
-         elif [ ${{ inputs.compiler }} == llvm ] && [ ${{ inputs.aosp-clang }} != false ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang LLVM=1 LLVM_IAS=0 AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTAR=llvm-ar"
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- LLVM=1"
          fi
          ${COMMAND}
     - name: AnyKernel3
