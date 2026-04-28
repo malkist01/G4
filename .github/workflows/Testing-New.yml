@@ -38,11 +38,6 @@ on:
         default: 'vendor/ginkgo_defconfig'
         required: true
         type: string
-      kernelsu:
-        description: 'KernelSU | false for disable'
-        default: 'hookless'
-        required: false
-        type: string
       disable-lto:
         description: 'Disable LTO'
         default: 'true'
