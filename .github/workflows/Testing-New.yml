@@ -59,7 +59,7 @@ jobs:
   anjani:
     runs-on: ${{ inputs.ubuntu }}
     container: 
-      image: debian:bookworm
+      image: debian:sid
     steps:
     - name: Checkin
       run: |
@@ -135,7 +135,8 @@ jobs:
          if [ ${{ inputs.aosp-clang }} == false ]; then
             echo "aosp-clang disable"
          else
-            export PATH=$HOME/bin:$PATH
+            export ARCH=arm64
+            LLVM=1
          fi
          export KBUILD_BUILD_USER="malkist"
          export KBUILD_BUILD_HOST="android"
