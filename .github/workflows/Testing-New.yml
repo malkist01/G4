@@ -86,28 +86,16 @@ jobs:
          echo "Anjani Project"
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Install Build Dependencies
+    - name: Initializing environment
       run: |
-       apt-get update
-       apt-get install -y \
-        build-essential \
-        bc \
-        bison \
-        ca-certificates \
-        clang \
-        cmake \
-        curl \
-       flex \
-       git \
-       libelf-dev \
-       libssl-dev \
-       make \
-       ninja-build \
-       python3 \
-       u-boot-tools \
-       xz-utils \
-       zlib1g-dev \
-       libncurses5-dev \
+          sudo apt update
+          sudo apt install -y \
+          bc bison ca-certificates curl flex gcc git libc6-dev libssl-dev \
+          openssl python-is-python3 ssh wget zip sudo make clang \
+          gcc-arm-linux-gnueabi software-properties-common build-essential \
+          libarchive-tools gcc-aarch64-linux-gnu libssl-dev libffi-dev \
+          libncurses5-dev zlib1g zlib1g-dev libreadline-dev libbz2-dev \
+          libsqlite3-dev make gcc pigz python3 cpio lld
     - name: Setup Kernel
       run: |
          if [ ${{ inputs.kernel-url }} != false ]; then
