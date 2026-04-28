@@ -88,10 +88,8 @@ jobs:
       uses: actions/checkout@v4
     - name: Setup Packages
       run: |
-         sudo timedatectl set-timezone Asia/Jakarta
-         sudo apt-get update
-         sudo apt-get install -y
-         build-essential bc bison ca-certificates clang cmake curl flex git libelf-dev libssl-dev make ninja-build python3 u-boot-tools xz-utils zlib1g-dev libncurses5-dev clang
+         apt update
+         Install clang lld apt install -y bc build-essential flex bison lld llvm clang libssl-dev libelf-dev gcc-aarch64-linux-gnu git kmod
          aria2c -q https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh && NONINTERACTIVE=1 bash ./uninstall.sh -f -q
          if [ -f /bin/swapon ]; then
              export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
