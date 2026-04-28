@@ -35,7 +35,7 @@ on:
         type: string
       kernel-config:
         description: 'Kernel-config'
-        default: 'vendor/vendor_defconfig'
+        default: 'vendor/ginkgo_defconfig'
         required: true
         type: string
       kernelsu:
@@ -56,10 +56,8 @@ on:
 env:        
  TZ: Asia/Jakarta
 jobs:
-  anjani:
+  linext-24:
     runs-on: ${{ inputs.ubuntu }}
-    container: 
-      image: debian:sid
     steps:
     - name: Checkin
       run: |
@@ -83,12 +81,64 @@ jobs:
          echo "kernel-config: ${{ inputs.kernel-config }}"
          echo "kernelsu: ${{ inputs.kernelsu }}"
          echo "disable-lto: ${{ inputs.disable-lto }}"
-         echo "Anjani Project"
+         echo "Annoy Project"
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Initializing environment
+    - name: Setup Packages
       run: |
-        apt install -y bc build-essential flex bison lld llvm clang libssl-dev libelf-dev gcc-aarch64-linux-gnu git kmod
+         sudo timedatectl set-timezone Asia/Jakarta
+         sudo apt update -y
+         sudo apt-get install --no-install-recommends -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu lld llvm g++-aarch64-linux-gnu
+         aria2c -q https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh && NONINTERACTIVE=1 bash ./uninstall.sh -f -q
+         if [ -f /bin/swapon ]; then
+             export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
+             sudo swapoff $SWAP_FILE
+             sudo rm $SWAP_FILE
+             sudo fallocate -l 16G $SWAP_FILE
+             sudo chmod 600 $SWAP_FILE
+             sudo mkswap $SWAP_FILE
+             sudo swapon $SWAP_FILE
+             unset SWAP_FILE
+         fi
+    - name: Setup GCC
+      run: |
+         if [ ${{ inputs.aosp-clang }} == false ]; then
+            echo "aosp-clang disable"
+         else
+            mkdir -p -v $HOME/gcc-64
+            git clone -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git $HOME/gcc-64
+            mkdir -p -v $HOME/gcc-32
+            git clone -b lineage-19.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9.git $HOME/gcc-32
+         fi
+    - name: Setup Clang
+      run: |
+         if [ ${{ inputs.aosp-clang }} == false ]; then
+            echo "aosp-clang disable"
+         else
+            if [ ${{ inputs.aosp-clang }} == "10" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r399163b/clang-r399163.tar.gz
+            elif [ ${{ inputs.aosp-clang }} == "11" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r416183/clang-r399163b.tar.gz
+            elif [ ${{ inputs.aosp-clang }} == "12" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/llvm-r416183/clang-r416183.tar.gz
+            elif [ ${{ inputs.aosp-clang }} == "13" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android13-release/clang-r450784d.tar.gz
+            elif [ ${{ inputs.aosp-clang }} == "17" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android14-release/clang-r487747c.tar.gz
+            elif [ ${{ inputs.aosp-clang }} == "18" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r522817.tar.gz
+            elif [ ${{ inputs.aosp-clang }} == "19" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r530567.tar.gz
+            elif [ ${{ inputs.aosp-clang }} == "20" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz          
+            elif [ ${{ inputs.aosp-clang }} == "21" ]; then
+                aria2c -o aosp-clang.tar.gz https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/0998f421320ae02fddabec8a78b91bf7620159f6/clang-r563880.tar.gz         
+            elif [ ${{ inputs.aosp-clang }} != false ]; then
+                aria2c -o aosp-clang.tar.gz ${{ inputs.aosp-clang }}
+            fi
+            mkdir $HOME/clang -p -v
+            tar -C $HOME/clang -zxf aosp-clang.tar.gz
+         fi
     - name: Setup Kernel
       run: |
          if [ ${{ inputs.kernel-url }} != false ]; then
@@ -128,13 +178,20 @@ jobs:
          if [ ${{ inputs.aosp-clang }} == false ]; then
             echo "aosp-clang disable"
          else
-            export ARCH=arm64
-            LLVM=1
+            export PATH=$HOME/clang/bin:$HOME/gcc-64/bin:$HOME/gcc-32/bin:$PATH
          fi
          export KBUILD_BUILD_USER="malkist"
          export KBUILD_BUILD_HOST="android"
          if [ ${{ inputs.compiler }} == gcc ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- LLVM=1"
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-"
+         elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} == false ]; then
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- CC=clang"
+         elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} != false ]; then
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang"
+         elif [ ${{ inputs.compiler }} == llvm ] && [ ${{ inputs.aosp-clang }} == false ]; then
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- CC=clang LLVM=1 LLVM_IAS=0 AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTAR=llvm-ar"
+         elif [ ${{ inputs.compiler }} == llvm ] && [ ${{ inputs.aosp-clang }} != false ]; then
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-android- CROSS_COMPILE_ARM32=arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- CC=clang LLVM=1 LLVM_IAS=0 AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTAR=llvm-ar"
          fi
          ${COMMAND}
     - name: AnyKernel3
