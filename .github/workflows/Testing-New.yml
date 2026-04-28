@@ -88,8 +88,8 @@ jobs:
       uses: actions/checkout@v4
     - name: Initializing environment
       run: |
-          sudo apt update
-          sudo apt install -y \
+          apt update
+          apt install -y \
           bc bison ca-certificates curl flex gcc git libc6-dev libssl-dev \
           openssl python-is-python3 ssh wget zip sudo make clang \
           gcc-arm-linux-gnueabi software-properties-common build-essential \
