@@ -58,6 +58,8 @@ env:
 jobs:
   anjani:
     runs-on: ${{ inputs.ubuntu }}
+    container: 
+      image: debian:bookworm
     steps:
     - name: Checkin
       run: |
@@ -81,7 +83,7 @@ jobs:
          echo "kernel-config: ${{ inputs.kernel-config }}"
          echo "kernelsu: ${{ inputs.kernelsu }}"
          echo "disable-lto: ${{ inputs.disable-lto }}"
-         echo "Annoy Project"
+         echo "Anjani Project"
     - name: Checkout
       uses: actions/checkout@v4
     - name: Setup Packages
@@ -165,26 +167,6 @@ jobs:
                   sed -i 's/CONFIG_THINLTO=y/CONFIG_THINLTO=n/' arch/arm64/configs/${{ inputs.kernel-config }} 
                   echo "CONFIG_LTO_NONE=y" | tee -a arch/arm64/configs/${{ inputs.kernel-config }} >/dev/null
              fi
-         fi
-    - name: Setup KernelSU
-      run: |
-         if [ ${{ inputs.kernel-url }} != false ]; then
-            cd kernel-dir
-         fi
-         if [ ${{ inputs.kernel-url }} == false ]; then
-            if [ ${{ inputs.kernel-branch }} != main ]; then
-               ${{ inputs.kernel-branch }}
-            fi
-         fi
-         rm -rf KernelSU
-         if [ ${{ inputs.kernelsu }} == ksu ]; then
-            curl -LSs "https://raw.githubusercontent.com/FirmanBell/KernelSU/main/kernel/setup.sh" | bash -s main
-         elif [ ${{ inputs.kernelsu }} == next ]; then
-            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
-         elif [ ${{ inputs.kernelsu }} == hookless ]; then   
-            curl -LSs "https://raw.githubusercontent.com/FirmanBell/KernelSU-Next/stable/kernel/setup.sh" | bash -s hookless
-         elif [ ${{ inputs.kernelsu }} != false ]; then
-            ${{ inputs.kernelsu }}
          fi
     - name: Compile
       run: |        
