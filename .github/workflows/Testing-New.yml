@@ -86,21 +86,28 @@ jobs:
          echo "Anjani Project"
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Setup Packages
+    - name: Install Build Dependencies
       run: |
-         apt update
-         Install clang lld apt install -y bc build-essential flex bison lld llvm clang libssl-dev libelf-dev gcc-aarch64-linux-gnu git kmod
-         aria2c -q https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh && NONINTERACTIVE=1 bash ./uninstall.sh -f -q
-         if [ -f /bin/swapon ]; then
-             export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
-             sudo swapoff $SWAP_FILE
-             sudo rm $SWAP_FILE
-             sudo fallocate -l 16G $SWAP_FILE
-             sudo chmod 600 $SWAP_FILE
-             sudo mkswap $SWAP_FILE
-             sudo swapon $SWAP_FILE
-             unset SWAP_FILE
-         fi
+       sudo apt-get update
+       sudo apt-get install -y \
+        build-essential \
+        bc \
+        bison \
+        ca-certificates \
+        clang \
+        cmake \
+        curl \
+       flex \
+       git \
+       libelf-dev \
+       libssl-dev \
+       make \
+       ninja-build \
+       python3 \
+       u-boot-tools \
+       xz-utils \
+       zlib1g-dev \
+       libncurses5-dev \
     - name: Setup GCC
       run: |
          if [ ${{ inputs.aosp-clang }} == false ]; then
