@@ -84,6 +84,12 @@ jobs:
          sudo timedatectl set-timezone Asia/Jakarta
          sudo apt update -y
          sudo apt-get install --no-install-recommends -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu lld llvm g++-aarch64-linux-gnu build-essential bc bison ca-certificates clang cmake curl flex git libelf-dev libssl-dev make ninja-build python3 u-boot-tools xz-utils zlib1g-dev libncurses5-dev
+         wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+         echo "deb http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main" | sudo tee /etc/apt/sources.list.d/llvm.list
+         sudo apt -y update
+         sudo apt install -y clang-21
+         sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 200
+         sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-21 200
          aria2c -q https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh && NONINTERACTIVE=1 bash ./uninstall.sh -f -q
          if [ -f /bin/swapon ]; then
              export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
