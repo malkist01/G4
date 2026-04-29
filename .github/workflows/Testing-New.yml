@@ -183,12 +183,12 @@ jobs:
             echo "aosp-clang disable"
          else
             export PATH=$HOME/clang/bin:$HOME/gcc-64/bin:$HOME/gcc-32/bin:$PATH
-            LLVM=1
+            K_FLAGS="-fcommon -Qunused-arguments -Wno-everything"
          fi
          export KBUILD_BUILD_USER="malkist"
          export KBUILD_BUILD_HOST="android"
          if [ ${{ inputs.compiler }} == gcc ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- LLVM=1 LLVM_IAS=0 AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTAR=llvm-ar"
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- LLVM=1 LLVM_IAS=0 AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTAR=llvm-ar KCFLAGS=-fcommon -Qunused-arguments -Wno-everything EXTRA_CFLAGS=-fcommon -Qunused-arguments -Wno-everything" 
          elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} == false ]; then
             COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- CC=clang"
          elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} != false ]; then
