@@ -83,7 +83,7 @@ jobs:
       run: |
          sudo timedatectl set-timezone Asia/Jakarta
          sudo apt update -y
-         sudo apt-get install --no-install-recommends -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu lld llvm g++-aarch64-linux-gnu build-essential bc bison ca-certificates clang cmake curl flex git libelf-dev libssl-dev make ninja-build python3 u-boot-tools xz-utils zlib1g-dev libncurses5-dev
+         sudo apt-get install --no-install-recommends -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu lld llvm g++-aarch64-linux-gnu build-essential bc bison ca-certificates clang clang++ cmake curl flex git libelf-dev libssl-dev make ninja-build python3 u-boot-tools xz-utils zlib1g-dev libncurses5-dev
          sudo wget -qO /etc/apt/trusted.gpg.d/apt.llvm.org.asc https://apt.llvm.org/llvm-snapshot.gpg.key
          echo "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/apt.llvm.org.list
          sudo apt -y update
