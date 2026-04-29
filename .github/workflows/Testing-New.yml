@@ -180,6 +180,7 @@ jobs:
             echo "aosp-clang disable"
          else
             export PATH=$HOME/clang/bin:$HOME/gcc-64/bin:$HOME/gcc-32/bin:$PATH
+            LLVM=1
          fi
          export KBUILD_BUILD_USER="malkist"
          export KBUILD_BUILD_HOST="android"
