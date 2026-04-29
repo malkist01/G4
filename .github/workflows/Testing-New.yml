@@ -88,11 +88,11 @@ jobs:
          echo "deb http://apt.llvm.org/$(lsb_release -sc)/ llvm-toolchain-$(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/apt.llvm.org.list
          wget https://apt.llvm.org/llvm.sh
          chmod +x llvm.sh
-         sudo ./llvm.sh 20
+         sudo ./llvm.sh 21
          sudo apt -y update
-         sudo apt install -y clang-20 lld-20 lldb-20
-         sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 200
-         sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-20 200
+         sudo apt install -y clang-21 lld-21 lldb-21
+         sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 200
+         sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-21 200
          aria2c -q https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh && NONINTERACTIVE=1 bash ./uninstall.sh -f -q
          if [ -f /bin/swapon ]; then
              export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
@@ -188,7 +188,7 @@ jobs:
          export KBUILD_BUILD_USER="malkist"
          export KBUILD_BUILD_HOST="android"
          if [ ${{ inputs.compiler }} == gcc ]; then
-            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-"
+            COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- LLVM=1 LLVM_IAS=0 AR=llvm-ar NM=llvm-nm STRIP=llvm-strip OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump READELF=llvm-readelf HOSTCC=clang HOSTCXX=clang++ HOSTAR=llvm-ar"
          elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} == false ]; then
             COMMAND+=" CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnueabi- CROSS_COMPILE_COMPAT=arm-linux-gnueabi- CC=clang"
          elif [ ${{ inputs.compiler }} == clang ] && [ ${{ inputs.aosp-clang }} != false ]; then
