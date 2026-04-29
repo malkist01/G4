@@ -90,6 +90,8 @@ jobs:
          sudo apt install -y clang-20 llvm-20 lld-20
          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-20 200
          sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-20 200
+         sudo update-alternatives --install /usr/bin/lld lld /usr/bin/lld-20 200
+         sudo update-alternatives --install /usr/bin/lld++ lld++ /usr/bin/lld++-20 200
          aria2c -q https://raw.githubusercontent.com/Homebrew/install/master/uninstall.sh && NONINTERACTIVE=1 bash ./uninstall.sh -f -q
          if [ -f /bin/swapon ]; then
              export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
