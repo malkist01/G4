@@ -38,11 +38,6 @@ on:
         default: 'vendor/ginkgo_defconfig'
         required: true
         type: string
-      kernelsu:
-        description: 'KernelSU | false for disable'
-        default: 'hookless'
-        required: true
-        type: string
       disable-lto:
         description: 'Disable LTO'
         default: 'true'
@@ -79,7 +74,6 @@ jobs:
             fi
          fi
          echo "kernel-config: ${{ inputs.kernel-config }}"
-         echo "kernelsu: ${{ inputs.kernelsu }}"
          echo "disable-lto: ${{ inputs.disable-lto }}"
          echo "Annoy Project"
     - name: Checkout
@@ -150,30 +144,6 @@ jobs:
                echo "custom-sc: disable"
             fi
             ls
-         fi
-    - name: Setup KernelSU
-      run: |
-         if [ ${{ inputs.kernel-url }} != false ]; then
-            cd kernel-dir
-          echo "CONFIG_KSU=y" >> ./arch/arm64/configs/vendor/ginkgo_config
-          echo "CONFIG_KSU_MANUAL_HOOK=y" >> ./arch/arm64/configs/vendor/ginkgo_config
-          curl -LSs "https://raw.githubusercontent.com/JackA1ltman/NonGKI_Kernel_Build_2nd/refs/heads/mainline/Patches/syscall_hook_patches.sh" | bash -s
-          curl -LSs "https://raw.githubusercontent.com/JackA1ltman/NonGKI_Kernel_Build_2nd/refs/heads/mainline/Patches/backport_patches.sh" | bash -s
-         fi
-         if [ ${{ inputs.kernel-url }} == false ]; then
-            if [ ${{ inputs.kernel-branch }} != main ]; then
-               ${{ inputs.kernel-branch }}
-            fi
-         fi
-         rm -rf KernelSU
-         if [ ${{ inputs.kernelsu }} == ksu ]; then
-            curl -LSs "https://raw.githubusercontent.com/FirmanBell/KernelSU/main/kernel/setup.sh" | bash -s main
-         elif [ ${{ inputs.kernelsu }} == next ]; then
-            curl -LSs "https://raw.githubusercontent.com/KernelSU-Next/KernelSU-Next/next/kernel/setup.sh" | bash -s legacy
-         elif [ ${{ inputs.kernelsu }} == hookless ]; then   
-            curl -LSs "https://raw.githubusercontent.com/FirmanBell/KernelSU-Next/stable/kernel/setup.sh" | bash -s hookless
-         elif [ ${{ inputs.kernelsu }} != false ]; then
-            ${{ inputs.kernelsu }}
          fi
     - name: Compile
       run: |        
