@@ -10,7 +10,7 @@ on:
         type: string
       name:
         description: 'Name'
-        default: '4.14-AnjaniLaurens'
+        default: '4.14-AnjaniLaurens-Susfs'
         required: true
         type: string
       compiler:
