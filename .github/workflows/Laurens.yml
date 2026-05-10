@@ -36,7 +36,7 @@ jobs:
 
       - name: Clone AOSP Clang 21
         run: |
-          mkdir -p prebuilts/clang/host/linux-x86/clang-r547379
+          mkdir -p prebuilts/clang/host/linux-x86/clang-r563880c
           aria2c -x 16 -s 16 -k 1M https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/4d2864f08ff2c290563fb903a5156e0504620bbe/clang-r563880c.tar.gz
           tar -xzf clang-r563880c.tar.gz -C prebuilts/clang/host/linux-x86/clang-r563880c
 
