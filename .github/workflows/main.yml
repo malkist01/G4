@@ -180,6 +180,7 @@ jobs:
             echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
             echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
             echo "CONFIG_THREAD_INFO_IN_TASK=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
+            curl -LSs "https://raw.githubusercontent.com/JackA1ltman/NonGKI_Kernel_Build_2nd/refs/heads/mainline/Patches/susfs_inline_hook_patches.sh" | bash -s
           
     - name: Compile
       run: |        
