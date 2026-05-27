@@ -178,10 +178,8 @@ jobs:
             echo "CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
             echo "CONFIG_KSU_SUSFS_OPEN_REDIRECT=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
             echo "CONFIG_KSU_SUSFS=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
-            echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> arch/arm64/configs/${{ inputs.kernel-config }}            
-        if grep -q "THREAD_INFO_IN_TASK" "drivers/kernelsu/Kconfig"; then
+            echo "CONFIG_KSU_SUSFS_SUS_MAP=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
             echo "CONFIG_THREAD_INFO_IN_TASK=y" >> arch/arm64/configs/${{ inputs.kernel-config }}
-        fi
           
     - name: Compile
       run: |        
